@@ -13,6 +13,13 @@ html, body {
 :root { --header-offset: 88px; } /* fallback */
 .scroll-offset { scroll-margin-top: var(--header-offset); }
 
+/* Grid RTL: sidebar moves to the right automatically */
+.layout-grid { direction: ltr; }
+html[dir="rtl"] .layout-grid { direction: rtl; }
+
+/* Helpers: flip some flex rows in RTL without Tailwind RTL plugin */
+html[dir="rtl"] .rtl\:dir-row-reverse { flex-direction: row-reverse; }
+
 /* --------------------------
    Theme tokens (dark default)
    -------------------------- */
@@ -82,7 +89,6 @@ html[data-theme="light"] .theme-bg-wash { opacity: 0.18; }
 .theme-muted{ color: var(--muted) !important; }
 
 /* Sidebar nav */
-.theme-navitem{ }
 .theme-navidle{ color: var(--text) !important; opacity: 0.85; }
 .theme-navactive{
   background: rgba(99,102,241,0.16) !important;

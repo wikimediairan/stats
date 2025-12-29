@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- External CSS -->
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
 
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,8 +20,8 @@
        1) data.js defines window.WIKI_LOVES_DATA
        2) app.js defines window.page()
        3) Alpine runs and calls page() -->
-  <script defer src="./data.js"></script>
-  <script defer src="./app.js"></script>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/app.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -39,25 +39,40 @@
     <header id="stickyHeader" class="no-print sticky top-0 z-40 border-b border-white/10 bg-slate-950/60 glass theme-header">
       <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 rtl:dir-row-reverse">
             <!-- Logo: put your file in the same folder (logo.svg or logo.png) -->
-            <img src="./logo.svg" alt="Logo"
+            <img src="assets/img/logo.svg" alt="Logo"
                  class="h-10 w-10 rounded-2xl object-contain bg-white/5 border border-white/10 p-1 theme-logo"
-                 onerror="this.onerror=null; this.src='./logo.png';" />
+                 onerror="this.onerror=null; this.src='assets/img/logo.svg';" />
 
             <div>
-              <h1 class="text-lg font-extrabold tracking-tight sm:text-xl theme-title">
+              <h1 class="text-lg font-extrabold tracking-tight sm:text-xl theme-title" x-text="t('title')">
                 Iranian Wikimedians Group Stats
               </h1>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- Language -->
+            <div class="flex items-center gap-2">
+              <span class="hidden sm:inline text-xs theme-muted" x-text="t('language')">Language</span>
+              <select
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold glass theme-select"
+                x-model="lang"
+                @change="setLang(lang)"
+                :aria-label="t('language')"
+              >
+                <option value="en">🇬🇧 English</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="fa">🇮🇷 فارسی</option>
+              </select>
+            </div>
+
             <!-- Light / Night (icons) -->
             <button
               class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition glass theme-btn"
               @click="toggleTheme()"
-              :title="theme === 'dark' ? 'Switch to Light' : 'Switch to Night'">
+              :title="theme === 'dark' ? t('switchToLight') : t('switchToDark')">
 
               <!-- Sun (shows in dark mode to indicate switching to light) -->
               <svg x-show="theme === 'dark'" x-cloak xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -80,18 +95,13 @@
               </svg>
             </button>
 
-            <button class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition glass theme-btn"
-                    @click="window.print()">
-              Print / Save PDF
-            </button>
-
             <!-- Mobile jump -->
             <div class="sm:hidden w-full" x-show="ready" x-cloak>
               <select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 theme-select"
                       @change="jumpTo($event.target.value)">
-                <option value="#overall">Overall</option>
+                <option value="#overall" x-text="t('overall')">Overall</option>
                 <template x-for="c in competitions" :key="c.slug">
-                  <option :value="`#comp-${c.slug}`" x-text="c.name"></option>
+                  <option :value="`#comp-${c.slug}`" x-text="compLabel(c)"></option>
                 </template>
               </select>
             </div>
@@ -99,30 +109,30 @@
         </div>
 
         <div x-show="errorMsg" x-cloak class="mt-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100 theme-error">
-          <span class="font-semibold">Error:</span> <span x-text="errorMsg"></span>
+          <span class="font-semibold" x-text="t('error')">Error:</span> <span x-text="errorMsg"></span>
         </div>
       </div>
     </header>
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12" x-show="ready" x-cloak>
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 layout-grid" x-show="ready" x-cloak>
         <!-- Sidebar -->
         <aside class="no-print hidden lg:block lg:col-span-3">
           <div class="sticky top-24 space-y-4">
             <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass theme-card">
-              <div class="text-xs text-slate-300 theme-muted">Navigate</div>
+              <div class="text-xs theme-muted" x-text="t('navigate')">Navigate</div>
               <nav class="mt-3 space-y-1">
                 <a href="#overall"
                    class="block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 transition theme-navitem"
                    :class="activeId==='overall' ? 'theme-navactive' : 'theme-navidle'">
-                  Overall
+                  <span x-text="t('overall')">Overall</span>
                 </a>
 
                 <template x-for="c in competitions" :key="c.slug">
                   <a :href="`#comp-${c.slug}`"
                      class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 transition theme-navitem"
                      :class="activeId===`comp-${c.slug}` ? 'theme-navactive' : 'theme-navidle'">
-                    <span x-text="c.name"></span>
+                    <span x-text="compLabel(c)"></span>
                     <span class="text-xs theme-muted" x-text="fmtInt(c.metrics.totalUploads)"></span>
                   </a>
                 </template>
@@ -130,12 +140,12 @@
             </div>
 
             <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass theme-card">
-              <div class="text-xs text-slate-300 theme-muted">Actions</div>
+              <div class="text-xs theme-muted" x-text="t('actions')">Actions</div>
               <div class="mt-3 flex flex-col gap-2">
                 <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition glass theme-btn"
-                        @click="expandAll()">Expand all</button>
+                        @click="expandAll()" x-text="t('expandAll')">Expand all</button>
                 <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition glass theme-btn"
-                        @click="collapseAll()">Collapse all</button>
+                        @click="collapseAll()" x-text="t('collapseAll')">Collapse all</button>
               </div>
             </div>
           </div>
@@ -149,46 +159,51 @@
                    class="scroll-offset rounded-2xl border border-white/10 bg-white/5 p-6 glass print-card theme-card">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 class="text-xl font-extrabold tracking-tight print-text theme-title">Overall</h2>
-                <p class="mt-1 text-sm text-slate-300 print-muted theme-muted">All competitions combined.</p>
+                <h2 class="text-xl font-extrabold tracking-tight print-text theme-title" x-text="t('overall')">Overall</h2>
+                <p class="mt-1 text-sm theme-muted print-muted" x-text="t('allCombined')">All competitions combined.</p>
               </div>
-              <div class="text-xs text-slate-300 print-muted theme-muted">
-                Years: <span class="font-semibold print-text theme-strong" x-text="overall.range"></span>
+              <div class="text-xs theme-muted print-muted">
+                <span x-text="t('years')">Years</span>:
+                <span class="font-semibold print-text theme-strong" x-text="overall.range"></span>
               </div>
             </div>
 
             <!-- KPIs -->
             <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                <div class="text-xs text-slate-300 print-muted theme-muted">Uploads</div>
+                <div class="text-xs theme-muted print-muted" x-text="t('uploads')">Uploads</div>
                 <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="overall.anim.uploads"></div>
-                <div class="mt-2 text-xs text-slate-300 print-muted theme-muted">
-                  Peak: <span class="font-semibold print-text theme-strong" x-text="overall.metrics.peak.year"></span>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('peak')">Peak</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="overall.metrics.peak.year"></span>
                   (<span class="font-semibold print-text theme-strong" x-text="fmtInt(overall.metrics.peak.uploads)"></span>)
                 </div>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                <div class="text-xs text-slate-300 print-muted theme-muted">Uploaders</div>
+                <div class="text-xs theme-muted print-muted" x-text="t('uploaders')">Uploaders</div>
                 <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="overall.anim.uploaders"></div>
-                <div class="mt-2 text-xs text-slate-300 print-muted theme-muted">
-                  Top comp: <span class="font-semibold print-text theme-strong" x-text="overall.metrics.topCompetitionByUploads.name"></span>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('topComp')">Top comp</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="compNameBySlug(overall.metrics.topCompetitionByUploads.slug)"></span>
                 </div>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                <div class="text-xs text-slate-300 print-muted theme-muted">Used in wikis</div>
+                <div class="text-xs theme-muted print-muted" x-text="t('usedInWikis')">Used in wikis</div>
                 <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="overall.anim.used"></div>
-                <div class="mt-2 text-xs text-slate-300 print-muted theme-muted">
-                  Avg used: <span class="font-semibold print-text theme-strong" x-text="fmtPct(overall.metrics.avgUsedPercent)"></span>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('avgUsed')">Avg used</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="fmtPct(overall.metrics.avgUsedPercent)"></span>
                 </div>
               </div>
 
               <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                <div class="text-xs text-slate-300 print-muted theme-muted">Avg newcomers</div>
+                <div class="text-xs theme-muted print-muted" x-text="t('avgNewcomers')">Avg newcomers</div>
                 <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="overall.anim.newPct"></div>
-                <div class="mt-2 text-xs text-slate-300 print-muted theme-muted">
-                  Best year: <span class="font-semibold print-text theme-strong" x-text="overall.metrics.bestNewcomer.year"></span>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('bestYear')">Best year</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="overall.metrics.bestNewcomer.year"></span>
                   (<span class="font-semibold print-text theme-strong" x-text="fmtPct(overall.metrics.bestNewcomer.percent)"></span>)
                 </div>
               </div>
@@ -199,8 +214,8 @@
               <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
                 <div class="flex items-end justify-between">
                   <div>
-                    <div class="text-sm font-semibold print-text theme-strong">Uploads over time</div>
-                    <div class="text-xs text-slate-300 print-muted theme-muted">Hover bars for details</div>
+                    <div class="text-sm font-semibold print-text theme-strong" x-text="t('uploadsOverTime')">Uploads over time</div>
+                    <div class="text-xs theme-muted print-muted" x-text="t('hoverBars')">Hover bars for details</div>
                   </div>
                 </div>
 
@@ -220,8 +235,12 @@
                       <div class="no-print pointer-events-none absolute -top-2 left-1/2 hidden -translate-x-1/2 -translate-y-full group-hover:block">
                         <div class="rounded-xl border px-3 py-2 text-xs shadow-xl glass whitespace-nowrap theme-tooltip">
                           <div class="font-semibold" x-text="y.year"></div>
-                          <div>Uploads: <span class="font-semibold" x-text="fmtInt(y.uploads)"></span></div>
-                          <div class="theme-muted">Used: <span class="font-semibold" x-text="fmtInt(y.usedCount)"></span> (<span x-text="fmtPct(y.usedPercent)"></span>)</div>
+                          <div><span x-text="t('uploads')">Uploads</span>: <span class="font-semibold" x-text="fmtInt(y.uploads)"></span></div>
+                          <div class="theme-muted">
+                            <span x-text="t('used')">Used</span>:
+                            <span class="font-semibold" x-text="fmtInt(y.usedCount)"></span>
+                            (<span x-text="fmtPct(y.usedPercent)"></span>)
+                          </div>
                         </div>
                       </div>
 
@@ -233,19 +252,19 @@
 
               <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card space-y-4">
                 <div>
-                  <div class="text-sm font-semibold print-text theme-strong">Overall conversion</div>
-                  <div class="text-xs theme-muted print-muted">Averages</div>
+                  <div class="text-sm font-semibold print-text theme-strong" x-text="t('overallConversion')">Overall conversion</div>
+                  <div class="text-xs theme-muted print-muted" x-text="t('averages')">Averages</div>
                 </div>
 
                 <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass print-card theme-card">
                   <div class="flex items-center justify-between">
                     <div>
-                      <div class="text-sm font-semibold print-text theme-strong">Used in wikis</div>
-                      <div class="text-xs theme-muted print-muted">Avg rate</div>
+                      <div class="text-sm font-semibold print-text theme-strong" x-text="t('usedInWikis')">Used in wikis</div>
+                      <div class="text-xs theme-muted print-muted" x-text="t('avgRate')">Avg rate</div>
                     </div>
                     <div class="text-sm font-bold print-text theme-strong" x-text="fmtPct(overall.metrics.avgUsedPercent)"></div>
                   </div>
-                  <div class="mt-4 flex items-center gap-4">
+                  <div class="mt-4 flex items-center gap-4 rtl:dir-row-reverse">
                     <svg class="h-20 w-20 shrink-0" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" class="donut-track" stroke-width="12" fill="none"></circle>
                       <circle cx="50" cy="50" r="40" class="donut-used" stroke-width="12" fill="none"
@@ -253,8 +272,8 @@
                               transform="rotate(-90 50 50)"></circle>
                     </svg>
                     <div class="text-xs theme-muted print-muted">
-                      <div>Total used: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUsedCount)"></span></div>
-                      <div>Total uploads: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUploads)"></span></div>
+                      <div><span x-text="t('totalUsed')">Total used</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUsedCount)"></span></div>
+                      <div><span x-text="t('totalUploads')">Total uploads</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUploads)"></span></div>
                     </div>
                   </div>
                 </div>
@@ -262,12 +281,12 @@
                 <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass print-card theme-card">
                   <div class="flex items-center justify-between">
                     <div>
-                      <div class="text-sm font-semibold print-text theme-strong">Newcomers</div>
-                      <div class="text-xs theme-muted print-muted">Avg share</div>
+                      <div class="text-sm font-semibold print-text theme-strong" x-text="t('newcomers')">Newcomers</div>
+                      <div class="text-xs theme-muted print-muted" x-text="t('avgShare')">Avg share</div>
                     </div>
                     <div class="text-sm font-bold print-text theme-strong" x-text="fmtPct(overall.metrics.avgNewPercent)"></div>
                   </div>
-                  <div class="mt-4 flex items-center gap-4">
+                  <div class="mt-4 flex items-center gap-4 rtl:dir-row-reverse">
                     <svg class="h-20 w-20 shrink-0" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" class="donut-track" stroke-width="12" fill="none"></circle>
                       <circle cx="50" cy="50" r="40" class="donut-new" stroke-width="12" fill="none"
@@ -275,8 +294,8 @@
                               transform="rotate(-90 50 50)"></circle>
                     </svg>
                     <div class="text-xs theme-muted print-muted">
-                      <div>Newcomers: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalNewcomers)"></span></div>
-                      <div>Uploaders: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUploaders)"></span></div>
+                      <div><span x-text="t('newcomers')">Newcomers</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalNewcomers)"></span></div>
+                      <div><span x-text="t('uploaders')">Uploaders</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(overall.metrics.totalUploaders)"></span></div>
                     </div>
                   </div>
                 </div>
@@ -290,21 +309,24 @@
             <article :id="`comp-${c.slug}`" :data-section="`comp-${c.slug}`"
                      class="scroll-offset rounded-2xl border border-white/10 bg-white/5 glass overflow-hidden print-card theme-card">
               <!-- header -->
-              <button class="no-print w-full px-6 py-5 text-left hover:bg-white/5 transition theme-accordion"
+              <button class="no-print w-full px-6 py-5 text-start hover:bg-white/5 transition theme-accordion"
                       @click="c.open = !c.open">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div class="flex items-start gap-4">
+                  <div class="flex items-start gap-4 rtl:dir-row-reverse">
                     <div class="mt-1 h-10 w-10 rounded-2xl bg-white/10 flex items-center justify-center font-extrabold theme-badge">
-                      <span x-text="c.name.split(' ').map(w=>w[0]).slice(0,2).join('')"></span>
+                      <span x-text="badgeText(compLabel(c))"></span>
                     </div>
                     <div>
-                      <div class="text-lg font-extrabold print-text theme-title" x-text="c.name"></div>
+                      <div class="text-lg font-extrabold print-text theme-title" x-text="compLabel(c)"></div>
                       <div class="text-xs theme-muted print-muted">
-                        Years: <span class="font-semibold theme-strong print-text" x-text="c.range"></span>
+                        <span x-text="t('years')">Years</span>:
+                        <span class="font-semibold theme-strong print-text" x-text="c.range"></span>
                         <span class="opacity-60">•</span>
-                        Uploads: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploads)"></span>
+                        <span x-text="t('uploads')">Uploads</span>:
+                        <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploads)"></span>
                         <span class="opacity-60">•</span>
-                        Avg used: <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgUsedPercent)"></span>
+                        <span x-text="t('avgUsed')">Avg used</span>:
+                        <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgUsedPercent)"></span>
                       </div>
                     </div>
                   </div>
@@ -322,35 +344,39 @@
               <div x-show="c.open" x-cloak class="px-6 pb-6">
                 <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                    <div class="text-xs theme-muted print-muted">Uploads</div>
+                    <div class="text-xs theme-muted print-muted" x-text="t('uploads')">Uploads</div>
                     <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="c.anim.uploads"></div>
                     <div class="mt-2 text-xs theme-muted print-muted">
-                      Peak: <span class="font-semibold theme-strong print-text" x-text="c.metrics.peak.year"></span>
+                      <span x-text="t('peak')">Peak</span>:
+                      <span class="font-semibold theme-strong print-text" x-text="c.metrics.peak.year"></span>
                       (<span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.peak.uploads)"></span>)
                     </div>
                   </div>
 
                   <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                    <div class="text-xs theme-muted print-muted">Uploaders</div>
+                    <div class="text-xs theme-muted print-muted" x-text="t('uploaders')">Uploaders</div>
                     <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="c.anim.uploaders"></div>
                     <div class="mt-2 text-xs theme-muted print-muted">
-                      Avg newcomers: <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgNewPercent)"></span>
+                      <span x-text="t('avgNewcomers')">Avg newcomers</span>:
+                      <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgNewPercent)"></span>
                     </div>
                   </div>
 
                   <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                    <div class="text-xs theme-muted print-muted">Used in wikis</div>
+                    <div class="text-xs theme-muted print-muted" x-text="t('usedInWikis')">Used in wikis</div>
                     <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="c.anim.used"></div>
                     <div class="mt-2 text-xs theme-muted print-muted">
-                      Avg used: <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgUsedPercent)"></span>
+                      <span x-text="t('avgUsed')">Avg used</span>:
+                      <span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.avgUsedPercent)"></span>
                     </div>
                   </div>
 
                   <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
-                    <div class="text-xs theme-muted print-muted">Avg newcomers</div>
+                    <div class="text-xs theme-muted print-muted" x-text="t('avgNewcomers')">Avg newcomers</div>
                     <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="c.anim.newPct"></div>
                     <div class="mt-2 text-xs theme-muted print-muted">
-                      Best year: <span class="font-semibold theme-strong print-text" x-text="c.metrics.bestNewcomer.year"></span>
+                      <span x-text="t('bestYear')">Best year</span>:
+                      <span class="font-semibold theme-strong print-text" x-text="c.metrics.bestNewcomer.year"></span>
                       (<span class="font-semibold theme-strong print-text" x-text="fmtPct(c.metrics.bestNewcomer.percent)"></span>)
                     </div>
                   </div>
@@ -360,11 +386,12 @@
                   <div class="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
                     <div class="flex items-end justify-between">
                       <div>
-                        <div class="text-sm font-semibold print-text theme-strong">Yearly uploads</div>
-                        <div class="text-xs theme-muted print-muted">Hover bars for details</div>
+                        <div class="text-sm font-semibold print-text theme-strong" x-text="t('yearlyUploads')">Yearly uploads</div>
+                        <div class="text-xs theme-muted print-muted" x-text="t('hoverBars')">Hover bars for details</div>
                       </div>
                       <div class="text-xs theme-muted print-muted">
-                        Years: <span class="font-semibold theme-strong print-text" x-text="c.range"></span>
+                        <span x-text="t('years')">Years</span>:
+                        <span class="font-semibold theme-strong print-text" x-text="c.range"></span>
                       </div>
                     </div>
 
@@ -377,9 +404,9 @@
                           <div class="no-print pointer-events-none absolute -top-2 left-1/2 hidden -translate-x-1/2 -translate-y-full group-hover:block">
                             <div class="rounded-xl border px-3 py-2 text-xs shadow-xl glass whitespace-nowrap theme-tooltip">
                               <div class="font-semibold" x-text="y.year"></div>
-                              <div>Uploads: <span class="font-semibold" x-text="fmtInt(y.uploads)"></span></div>
-                              <div class="theme-muted">Used: <span class="font-semibold" x-text="fmtInt(y.usedCount)"></span> (<span x-text="fmtPct(y.usedPercent)"></span>)</div>
-                              <div class="theme-muted">Newcomers: <span class="font-semibold" x-text="fmtInt(y.newCount)"></span> (<span x-text="fmtPct(y.newPercent)"></span>)</div>
+                              <div><span x-text="t('uploads')">Uploads</span>: <span class="font-semibold" x-text="fmtInt(y.uploads)"></span></div>
+                              <div class="theme-muted"><span x-text="t('used')">Used</span>: <span class="font-semibold" x-text="fmtInt(y.usedCount)"></span> (<span x-text="fmtPct(y.usedPercent)"></span>)</div>
+                              <div class="theme-muted"><span x-text="t('newcomers')">Newcomers</span>: <span class="font-semibold" x-text="fmtInt(y.newCount)"></span> (<span x-text="fmtPct(y.newPercent)"></span>)</div>
                             </div>
                           </div>
 
@@ -391,19 +418,19 @@
 
                   <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card space-y-4">
                     <div>
-                      <div class="text-sm font-semibold print-text theme-strong">Conversion</div>
-                      <div class="text-xs theme-muted print-muted">Averages</div>
+                      <div class="text-sm font-semibold print-text theme-strong" x-text="t('conversion')">Conversion</div>
+                      <div class="text-xs theme-muted print-muted" x-text="t('averages')">Averages</div>
                     </div>
 
                     <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass print-card theme-card">
                       <div class="flex items-center justify-between">
                         <div>
-                          <div class="text-sm font-semibold print-text theme-strong">Used in wikis</div>
-                          <div class="text-xs theme-muted print-muted">Avg rate</div>
+                          <div class="text-sm font-semibold print-text theme-strong" x-text="t('usedInWikis')">Used in wikis</div>
+                          <div class="text-xs theme-muted print-muted" x-text="t('avgRate')">Avg rate</div>
                         </div>
                         <div class="text-sm font-bold print-text theme-strong" x-text="fmtPct(c.metrics.avgUsedPercent)"></div>
                       </div>
-                      <div class="mt-4 flex items-center gap-4">
+                      <div class="mt-4 flex items-center gap-4 rtl:dir-row-reverse">
                         <svg class="h-20 w-20 shrink-0" viewBox="0 0 100 100">
                           <circle cx="50" cy="50" r="40" class="donut-track" stroke-width="12" fill="none"></circle>
                           <circle cx="50" cy="50" r="40" class="donut-used" stroke-width="12" fill="none"
@@ -411,8 +438,8 @@
                                   transform="rotate(-90 50 50)"></circle>
                         </svg>
                         <div class="text-xs theme-muted print-muted">
-                          <div>Total used: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUsedCount)"></span></div>
-                          <div>Total uploads: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploads)"></span></div>
+                          <div><span x-text="t('totalUsed')">Total used</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUsedCount)"></span></div>
+                          <div><span x-text="t('totalUploads')">Total uploads</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploads)"></span></div>
                         </div>
                       </div>
                     </div>
@@ -420,12 +447,12 @@
                     <div class="rounded-2xl border border-white/10 bg-white/5 p-4 glass print-card theme-card">
                       <div class="flex items-center justify-between">
                         <div>
-                          <div class="text-sm font-semibold print-text theme-strong">Newcomers</div>
-                          <div class="text-xs theme-muted print-muted">Avg share</div>
+                          <div class="text-sm font-semibold print-text theme-strong" x-text="t('newcomers')">Newcomers</div>
+                          <div class="text-xs theme-muted print-muted" x-text="t('avgShare')">Avg share</div>
                         </div>
                         <div class="text-sm font-bold print-text theme-strong" x-text="fmtPct(c.metrics.avgNewPercent)"></div>
                       </div>
-                      <div class="mt-4 flex items-center gap-4">
+                      <div class="mt-4 flex items-center gap-4 rtl:dir-row-reverse">
                         <svg class="h-20 w-20 shrink-0" viewBox="0 0 100 100">
                           <circle cx="50" cy="50" r="40" class="donut-track" stroke-width="12" fill="none"></circle>
                           <circle cx="50" cy="50" r="40" class="donut-new" stroke-width="12" fill="none"
@@ -433,8 +460,8 @@
                                   transform="rotate(-90 50 50)"></circle>
                         </svg>
                         <div class="text-xs theme-muted print-muted">
-                          <div>Newcomers: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalNewcomers)"></span></div>
-                          <div>Uploaders: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploaders)"></span></div>
+                          <div><span x-text="t('newcomers')">Newcomers</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalNewcomers)"></span></div>
+                          <div><span x-text="t('uploaders')">Uploaders</span>: <span class="font-semibold theme-strong print-text" x-text="fmtInt(c.metrics.totalUploaders)"></span></div>
                         </div>
                       </div>
                     </div>
@@ -447,7 +474,9 @@
           </template>
 
           <footer class="pb-8 text-center text-xs theme-muted print-muted">
-            Offline report • Source: <span class="theme-strong print-text" x-text="data?.source ?? ''"></span>
+            <span x-text="t('offlineReport')">Offline report</span> •
+            <span x-text="t('source')">Source</span>:
+            <span class="theme-strong print-text" x-text="data?.source ?? ''"></span>
           </footer>
         </main>
       </div>

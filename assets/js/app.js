@@ -1,8 +1,142 @@
 // app.js
 // Reads data from: window.WIKI_LOVES_DATA (defined in data.js)
-// Theme: uses <html data-theme="dark|light"> + localStorage persistence
+// Theme: <html data-theme="dark|light">
+// Language: <html lang=".."> + <html dir="ltr|rtl">
 
 window.page = function page() {
+  const I18N = {
+    en: {
+      title: "Iranian Wikimedians Group Stats",
+      language: "Language",
+      navigate: "Navigate",
+      actions: "Actions",
+      expandAll: "Expand all",
+      collapseAll: "Collapse all",
+      overall: "Overall",
+      allCombined: "All competitions combined.",
+      years: "Years",
+      uploads: "Uploads",
+      uploaders: "Uploaders",
+      usedInWikis: "Used in wikis",
+      avgUsed: "Avg used",
+      avgNewcomers: "Avg newcomers",
+      bestYear: "Best year",
+      peak: "Peak",
+      topComp: "Top comp",
+      uploadsOverTime: "Uploads over time",
+      hoverBars: "Hover bars for details",
+      overallConversion: "Overall conversion",
+      conversion: "Conversion",
+      averages: "Averages",
+      avgRate: "Avg rate",
+      totalUsed: "Total used",
+      totalUploads: "Total uploads",
+      newcomers: "Newcomers",
+      avgShare: "Avg share",
+      yearlyUploads: "Yearly uploads",
+      used: "Used",
+      offlineReport: "Offline report",
+      source: "Source",
+      error: "Error:",
+      switchToLight: "Switch to Light",
+      switchToDark: "Switch to Night",
+    },
+    de: {
+      title: "Statistiken der iranischen Wikimedianer-Gruppe",
+      language: "Sprache",
+      navigate: "Navigation",
+      actions: "Aktionen",
+      expandAll: "Alle öffnen",
+      collapseAll: "Alle schließen",
+      overall: "Gesamt",
+      allCombined: "Alle Wettbewerbe zusammen.",
+      years: "Jahre",
+      uploads: "Uploads",
+      uploaders: "Uploader",
+      usedInWikis: "In Wikis verwendet",
+      avgUsed: "Ø verwendet",
+      avgNewcomers: "Ø Neulinge",
+      bestYear: "Bestes Jahr",
+      peak: "Spitze",
+      topComp: "Top-Wettbewerb",
+      uploadsOverTime: "Uploads im Zeitverlauf",
+      hoverBars: "Für Details Balken berühren",
+      overallConversion: "Gesamt-Konversion",
+      conversion: "Konversion",
+      averages: "Durchschnitte",
+      avgRate: "Ø Rate",
+      totalUsed: "Insgesamt verwendet",
+      totalUploads: "Insgesamt Uploads",
+      newcomers: "Neulinge",
+      avgShare: "Ø Anteil",
+      yearlyUploads: "Jährliche Uploads",
+      used: "Verwendet",
+      offlineReport: "Offline-Bericht",
+      source: "Quelle",
+      error: "Fehler:",
+      switchToLight: "Zu Hell wechseln",
+      switchToDark: "Zu Nacht wechseln",
+    },
+    fa: {
+      title: "آمار گروه ویکی‌مدین‌های ایرانی",
+      language: "زبان",
+      navigate: "راهنما",
+      actions: "اقدامات",
+      expandAll: "باز کردن همه",
+      collapseAll: "بستن همه",
+      overall: "کلی",
+      allCombined: "مجموع همه مسابقات.",
+      years: "سال‌ها",
+      uploads: "بارگذاری‌ها",
+      uploaders: "بارگذاران",
+      usedInWikis: "استفاده‌شده در ویکی‌ها",
+      avgUsed: "میانگین استفاده",
+      avgNewcomers: "میانگین تازه‌واردها",
+      bestYear: "بهترین سال",
+      peak: "اوج",
+      topComp: "برترین مسابقه",
+      uploadsOverTime: "بارگذاری‌ها در گذر زمان",
+      hoverBars: "برای جزئیات روی ستون‌ها بروید",
+      overallConversion: "نرخ تبدیل کلی",
+      conversion: "تبدیل",
+      averages: "میانگین‌ها",
+      avgRate: "میانگین نرخ",
+      totalUsed: "کل استفاده‌شده",
+      totalUploads: "کل بارگذاری‌ها",
+      newcomers: "تازه‌واردها",
+      avgShare: "میانگین سهم",
+      yearlyUploads: "بارگذاری سالانه",
+      used: "استفاده‌شده",
+      offlineReport: "گزارش آفلاین",
+      source: "منبع",
+      error: "خطا:",
+      switchToLight: "تغییر به روشن",
+      switchToDark: "تغییر به تاریک",
+    }
+  };
+
+  // Competition name translations by slug.
+  const COMP_NAMES = {
+    en: {
+      earth: "Wiki Loves Earth",
+      folklore: "Wiki Loves Folklore",
+      monuments: "Wiki Loves Monuments",
+      science: "Wiki Science Competition",
+    },
+    de: {
+      earth: "Wiki Loves Earth (Erde)",
+      folklore: "Wiki Loves Folklore (Volkskunde)",
+      monuments: "Wiki Loves Monuments (Denkmäler)",
+      science: "Wiki Science Competition (Wissenschaft)",
+    },
+    fa: {
+      earth: "ویکی دوستدار زمین",
+      folklore: "ویکی دوستدار فرهنگ عامه",
+      monuments: "ویکی دوستدار بناهای تاریخی",
+      science: "مسابقه ویکی‌علم",
+    }
+  };
+
   return {
     window,
 
@@ -11,6 +145,7 @@ window.page = function page() {
     data: null,
 
     theme: "dark",
+    lang: "en",
 
     activeId: "overall",
 
@@ -19,7 +154,7 @@ window.page = function page() {
       metrics: {
         peak: { year: "—", uploads: 0 },
         bestNewcomer: { year: "—", percent: 0 },
-        topCompetitionByUploads: { name: "—" },
+        topCompetitionByUploads: { slug: "—", uploads: 0 },
         totalUploads: 0,
         totalUploaders: 0,
         totalUsedCount: 0,
@@ -36,12 +171,14 @@ window.page = function page() {
 
     init() {
       try {
-        // Theme init
-        const saved = localStorage.getItem("wl_theme");
-        this.theme = (saved === "light" || saved === "dark") ? saved : "dark";
+        const savedTheme = localStorage.getItem("wl_theme");
+        this.theme = (savedTheme === "light" || savedTheme === "dark") ? savedTheme : "dark";
         this.applyTheme();
 
-        // Data init
+        const savedLang = localStorage.getItem("wl_lang");
+        this.lang = (savedLang && I18N[savedLang]) ? savedLang : "en";
+        this.applyLang();
+
         this.data = window.WIKI_LOVES_DATA || null;
         if (!this.data) throw new Error("Missing data: window.WIKI_LOVES_DATA is not defined. Check data.js is included before app.js.");
 
@@ -63,6 +200,50 @@ window.page = function page() {
       }
     },
 
+    // i18n
+    t(key) {
+      return (I18N[this.lang] && I18N[this.lang][key]) || I18N.en[key] || key;
+    },
+
+    setLang(l) {
+      if (!I18N[l]) return;
+      this.lang = l;
+      localStorage.setItem("wl_lang", this.lang);
+      this.applyLang();
+
+      document.title =
+        this.lang === "fa" ? "اینفوگرافیک ویکی لاوز — ایران"
+        : this.lang === "de" ? "Wiki Loves — Iran Infografik"
+        : "Wiki Loves — Iran Infographic";
+
+      this.$nextTick(() => this.updateHeaderOffset());
+    },
+
+    applyLang() {
+      const dir = (this.lang === "fa") ? "rtl" : "ltr";
+      document.documentElement.setAttribute("lang", this.lang);
+      document.documentElement.setAttribute("dir", dir);
+    },
+
+    compNameBySlug(slug, fallbackOriginalName = "") {
+      const langMap = COMP_NAMES[this.lang] || COMP_NAMES.en;
+      return langMap?.[slug] || COMP_NAMES.en?.[slug] || fallbackOriginalName || slug || "—";
+    },
+
+    compLabel(c) {
+      return this.compNameBySlug(c?.slug, c?.originalName || c?.name || "");
+    },
+
+    badgeText(name) {
+      const s = String(name || "").trim();
+      if (!s) return "•";
+      const parts = s.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      const chars = Array.from(s);
+      return (chars.slice(0, 2).join("")).toUpperCase();
+    },
+
+    // Theme
     toggleTheme() {
       this.theme = this.theme === "dark" ? "light" : "dark";
       localStorage.setItem("wl_theme", this.theme);
@@ -73,14 +254,13 @@ window.page = function page() {
       document.documentElement.setAttribute("data-theme", this.theme);
     },
 
-    // Sticky header offset for anchor jumps
     updateHeaderOffset() {
       const header = document.getElementById("stickyHeader");
       const h = header ? Math.ceil(header.getBoundingClientRect().height) : 88;
       document.documentElement.style.setProperty("--header-offset", `${h + 12}px`);
     },
 
-    // ---------- Build view models ----------
+    // Build models
     buildModels() {
       const comps = (this.data?.competitions ?? []).map((c) => {
         const rows = this.normalizeCompetition(c);
@@ -97,6 +277,7 @@ window.page = function page() {
         };
 
         return {
+          originalName: c.name,
           name: c.name,
           slug: c.slug,
           open: true,
@@ -112,7 +293,6 @@ window.page = function page() {
 
       this.competitions = comps;
 
-      // overall
       const allRows = comps.flatMap((c) => c.rows);
       this.overall.series = this.makeSeries(allRows);
       this.overall.metrics = this.computeMetrics(allRows, "all", "All competitions");
@@ -203,14 +383,15 @@ window.page = function page() {
         { year: "—", percent: 0 }
       );
 
-      let topCompetitionByUploads = { slug, name, uploads: totalUploads };
+      let topCompetitionByUploads = { slug, uploads: totalUploads };
+
       if (slug === "all") {
         const byComp = new Map();
         for (const r of rows ?? []) byComp.set(r.slug, (byComp.get(r.slug) ?? 0) + r.uploads);
-        topCompetitionByUploads = { slug: "—", name: "—", uploads: 0 };
+
+        topCompetitionByUploads = { slug: "—", uploads: 0 };
         for (const [s, uploads] of byComp.entries()) {
-          const compName = (this.data?.competitions ?? []).find((c) => c.slug === s)?.name ?? s;
-          if (uploads > topCompetitionByUploads.uploads) topCompetitionByUploads = { slug: s, name: compName, uploads };
+          if (uploads > topCompetitionByUploads.uploads) topCompetitionByUploads = { slug: s, uploads };
         }
       }
 
@@ -245,7 +426,6 @@ window.page = function page() {
       return { linePath, areaPath };
     },
 
-    // ---------- Sticky nav highlight ----------
     setupScrollSpy() {
       const els = [...document.querySelectorAll("[data-section]")];
       if (!els.length) return;
@@ -263,7 +443,6 @@ window.page = function page() {
       els.forEach((el) => obs.observe(el));
     },
 
-    // ---------- Animations ----------
     setupAnimations() {
       const overallEl = document.getElementById("overall");
       if (overallEl) {
@@ -343,7 +522,6 @@ window.page = function page() {
       requestAnimationFrame(step);
     },
 
-    // ---------- Utilities ----------
     expandAll() { this.competitions.forEach((c) => (c.open = true)); },
     collapseAll() { this.competitions.forEach((c) => (c.open = false)); },
 

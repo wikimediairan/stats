@@ -1,5 +1,7 @@
 // app.js
-// Reads data from: window.WIKI_LOVES_DATA (defined in data.js)
+// Reads data from:
+// - window.WIKI_LOVES_DATA (defined in wikiloves.js)
+// - window.WIR_DATA (defined in wir.js) [optional]
 // Theme: <html data-theme="dark|light">
 // Language: <html lang=".."> + <html dir="ltr|rtl">
 
@@ -40,7 +42,19 @@ window.page = function page() {
       error: "Error:",
       switchToLight: "Switch to Light",
       switchToDark: "Switch to Night",
+
+      // Women in Red
+      womenInRed: "Women in Red",
+      wirSubtitle: "Yearly articles and participants stats.",
+      articles: "Articles",
+      participants: "Participants",
+      totalArticlesCreated: "Total articles created",
+      sumParticipantsPerYear: "Sum (counted per year)",
+      peakArticles: "Peak articles",
+      peakParticipants: "Peak participants",
+      yearByYear: "Year-by-year",
     },
+
     de: {
       title: "Statistiken der iranischen Wikimedianer-Gruppe",
       language: "Sprache",
@@ -76,7 +90,19 @@ window.page = function page() {
       error: "Fehler:",
       switchToLight: "Zu Hell wechseln",
       switchToDark: "Zu Nacht wechseln",
+
+      // Women in Red
+      womenInRed: "Women in Red",
+      wirSubtitle: "Jährliche Artikel- und Teilnehmendenstatistik.",
+      articles: "Artikel",
+      participants: "Teilnehmende",
+      totalArticlesCreated: "Gesamtzahl erstellter Artikel",
+      sumParticipantsPerYear: "Summe (jährlich gezählt)",
+      peakArticles: "Artikel-Rekord",
+      peakParticipants: "Teilnehmenden-Rekord",
+      yearByYear: "Jahresübersicht",
     },
+
     fa: {
       title: "آمار گروه ویکی‌مدین‌های ایرانی",
       language: "زبان",
@@ -112,6 +138,17 @@ window.page = function page() {
       error: "خطا:",
       switchToLight: "تغییر به روشن",
       switchToDark: "تغییر به تاریک",
+
+      // Women in Red
+      womenInRed: "زنان سرخپوش",
+      wirSubtitle: "آمار ساخت مقاله‌ها و شرکت‌کنندگان (سالانه).",
+      articles: "مقاله‌ها",
+      participants: "شرکت‌کنندگان",
+      totalArticlesCreated: "جمع کل مقاله‌های ساخته‌شده",
+      sumParticipantsPerYear: "جمع کل شرکت‌کنندگان (سالانه)",
+      peakArticles: "اوج مقاله‌ها",
+      peakParticipants: "اوج شرکت‌کنندگان",
+      yearByYear: "سال‌به‌سال",
     }
   };
 
@@ -132,7 +169,7 @@ window.page = function page() {
     fa: {
       earth: "ویکی دوستدار زمین",
       folklore: "ویکی دوستدار فرهنگ عامه",
-      monuments: "ویکی دوستدار بناهای تاریخی",
+      monuments: "ویکی دوستدار یادمان‌ها",
       science: "مسابقه ویکی‌علم",
     }
   };
@@ -142,7 +179,8 @@ window.page = function page() {
 
     ready: false,
     errorMsg: "",
-    data: null,
+    data: null,     // Wiki Loves
+    wirData: null,  // Women in Red (optional)
 
     theme: "dark",
     lang: "en",
@@ -169,6 +207,26 @@ window.page = function page() {
       animatedDone: false,
     },
 
+    // Women in Red model
+    wir: {
+      available: false,
+      series: [],
+      range: "—",
+      metrics: {
+        totalArticles: 0,
+        totalParticipants: 0,
+        peakArticles: { year: "—", value: 0 },
+        peakParticipants: { year: "—", value: 0 },
+      },
+      anim: {
+        totalArticles: "0",
+        totalParticipants: "0",
+        peakArticles: "0",
+        peakParticipants: "0",
+      },
+      animatedDone: false,
+    },
+
     init() {
       try {
         const savedTheme = localStorage.getItem("wl_theme");
@@ -180,7 +238,9 @@ window.page = function page() {
         this.applyLang();
 
         this.data = window.WIKI_LOVES_DATA || null;
-        if (!this.data) throw new Error("Missing data: window.WIKI_LOVES_DATA is not defined. Check data.js is included before app.js.");
+        if (!this.data) throw new Error("Missing data: window.WIKI_LOVES_DATA is not defined. Check wikiloves.js is included before app.js.");
+
+        this.wirData = window.WIR_DATA || null;
 
         this.buildModels();
         this.ready = true;
@@ -304,6 +364,65 @@ window.page = function page() {
       this.overall.anim.used = this.fmtInt(this.overall.metrics.totalUsedCount);
       this.overall.anim.newPct = `${Math.round(this.overall.metrics.avgNewPercent)}%`;
       this.overall.animatedDone = false;
+
+      this.buildWIR();
+    },
+
+    buildWIR() {
+      const src = this.wirData;
+      if (!src || !Array.isArray(src.years) || !src.years.length) {
+        this.wir.available = false;
+        this.wir.series = [];
+        this.wir.range = "—";
+        this.wir.metrics = {
+          totalArticles: 0,
+          totalParticipants: 0,
+          peakArticles: { year: "—", value: 0 },
+          peakParticipants: { year: "—", value: 0 },
+        };
+        this.wir.anim = {
+          totalArticles: "0",
+          totalParticipants: "0",
+          peakArticles: "0",
+          peakParticipants: "0",
+        };
+        this.wir.animatedDone = false;
+        return;
+      }
+
+      const series = src.years
+        .map((y) => ({
+          year: Number(y.year),
+          articles: Number(y.articles ?? 0),
+          participants: Number(y.participants ?? 0),
+        }))
+        .filter((y) => Number.isFinite(y.year))
+        .sort((a, b) => a.year - b.year);
+
+      const totalArticles = series.reduce((s, y) => s + y.articles, 0);
+      const totalParticipants = series.reduce((s, y) => s + y.participants, 0);
+
+      const peakArticles = series.reduce(
+        (best, y) => (y.articles > (best.value ?? -1) ? { year: y.year, value: y.articles } : best),
+        { year: "—", value: 0 }
+      );
+
+      const peakParticipants = series.reduce(
+        (best, y) => (y.participants > (best.value ?? -1) ? { year: y.year, value: y.participants } : best),
+        { year: "—", value: 0 }
+      );
+
+      this.wir.available = true;
+      this.wir.series = series;
+      this.wir.range = this.yearRange(series.map((y) => y.year));
+      this.wir.metrics = { totalArticles, totalParticipants, peakArticles, peakParticipants };
+      this.wir.anim = {
+        totalArticles: this.fmtInt(totalArticles),
+        totalParticipants: this.fmtInt(totalParticipants),
+        peakArticles: this.fmtInt(peakArticles.value),
+        peakParticipants: this.fmtInt(peakParticipants.value),
+      };
+      this.wir.animatedDone = false;
     },
 
     normalizeCompetition(comp) {
@@ -455,6 +574,17 @@ window.page = function page() {
         obs.observe(overallEl);
       }
 
+      const wirEl = document.getElementById("wir");
+      if (wirEl) {
+        const wirObs = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) this.animateWIR();
+          },
+          { threshold: 0.35 }
+        );
+        wirObs.observe(wirEl);
+      }
+
       const compEls = [...document.querySelectorAll('article[id^="comp-"]')];
       const compObs = new IntersectionObserver(
         (entries) => {
@@ -479,6 +609,12 @@ window.page = function page() {
         if (r.top < window.innerHeight * 0.85 && r.bottom > 0) this.animateOverall();
       }
 
+      const w = document.getElementById("wir");
+      if (w) {
+        const r = w.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.85 && r.bottom > 0) this.animateWIR();
+      }
+
       for (const el of document.querySelectorAll('article[id^="comp-"]')) {
         const r = el.getBoundingClientRect();
         const inView = r.top < window.innerHeight * 0.85 && r.bottom > 0;
@@ -498,6 +634,17 @@ window.page = function page() {
       this.tweenNumber(0, this.overall.metrics.totalUploaders, 900, (v) => (this.overall.anim.uploaders = this.fmtInt(v)));
       this.tweenNumber(0, this.overall.metrics.totalUsedCount, 900, (v) => (this.overall.anim.used = this.fmtInt(v)));
       this.tweenNumber(0, Math.round(this.overall.metrics.avgNewPercent), 900, (v) => (this.overall.anim.newPct = `${v}%`));
+    },
+
+    animateWIR() {
+      if (!this.wir.available) return;
+      if (this.wir.animatedDone) return;
+      this.wir.animatedDone = true;
+
+      this.tweenNumber(0, this.wir.metrics.totalArticles, 900, (v) => (this.wir.anim.totalArticles = this.fmtInt(v)));
+      this.tweenNumber(0, this.wir.metrics.totalParticipants, 900, (v) => (this.wir.anim.totalParticipants = this.fmtInt(v)));
+      this.tweenNumber(0, this.wir.metrics.peakArticles.value, 900, (v) => (this.wir.anim.peakArticles = this.fmtInt(v)));
+      this.tweenNumber(0, this.wir.metrics.peakParticipants.value, 900, (v) => (this.wir.anim.peakParticipants = this.fmtInt(v)));
     },
 
     animateCompetition(c) {

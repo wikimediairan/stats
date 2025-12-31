@@ -17,10 +17,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- IMPORTANT ORDER:
-       1) data.js defines window.WIKI_LOVES_DATA
-       2) app.js defines window.page()
-       3) Alpine runs and calls page() -->
-  <script defer src="assets/js/data.js"></script>
+       1) wikiloves.js defines window.WIKI_LOVES_DATA
+       2) wir.js defines window.WIR_DATA
+       3) app.js defines window.page()
+       4) Alpine runs and calls page() -->
+  <script defer src="assets/js/wikiloves.js"></script>
+  <script defer src="assets/js/wir.js"></script>
   <script defer src="assets/js/app.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -91,7 +93,7 @@
               <!-- Moon (shows in light mode to indicate switching to dark) -->
               <svg x-show="theme !== 'dark'" x-cloak xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                    class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3c.02.34.03.68.03 1.03a7 7 0 0 0 9.76 6.76z"></path>
+                <path d="M21 12.79A9 9 0 0 1 11.21 3c.02.34.03.68.03 1.03a7 7 0 0 0 9.76 6.76z"></path>
               </svg>
             </button>
 
@@ -100,6 +102,7 @@
               <select class="mt-2 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 theme-select"
                       @change="jumpTo($event.target.value)">
                 <option value="#overall" x-text="t('overall')">Overall</option>
+                <option value="#wir" x-show="wir.available" x-cloak x-text="t('womenInRed')">Women in Red</option>
                 <template x-for="c in competitions" :key="c.slug">
                   <option :value="`#comp-${c.slug}`" x-text="compLabel(c)"></option>
                 </template>
@@ -126,6 +129,13 @@
                    class="block rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 transition theme-navitem"
                    :class="activeId==='overall' ? 'theme-navactive' : 'theme-navidle'">
                   <span x-text="t('overall')">Overall</span>
+                </a>
+
+                <a href="#wir" x-show="wir.available" x-cloak
+                   class="flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 transition theme-navitem"
+                   :class="activeId==='wir' ? 'theme-navactive' : 'theme-navidle'">
+                  <span x-text="t('womenInRed')">Women in Red</span>
+                  <span class="text-xs theme-muted" x-text="wir.anim.totalArticles"></span>
                 </a>
 
                 <template x-for="c in competitions" :key="c.slug">
@@ -301,6 +311,79 @@
                 </div>
 
               </div>
+            </div>
+          </section>
+
+          <!-- WOMEN IN RED -->
+          <section id="wir" data-section="wir" x-show="wir.available" x-cloak
+                   class="scroll-offset rounded-2xl border border-white/10 bg-white/5 p-6 glass print-card theme-card">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 class="text-xl font-extrabold tracking-tight print-text theme-title" x-text="t('womenInRed')">Women in Red</h2>
+                <p class="mt-1 text-sm theme-muted print-muted" x-text="t('wirSubtitle')">Yearly articles and participants stats.</p>
+              </div>
+
+              <div class="text-xs theme-muted print-muted">
+                <span x-text="t('years')">Years</span>:
+                <span class="font-semibold print-text theme-strong" x-text="wir.range"></span>
+              </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
+                <div class="text-xs theme-muted print-muted" x-text="t('articles')">Articles</div>
+                <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="wir.anim.totalArticles"></div>
+                <div class="mt-2 text-xs theme-muted print-muted" x-text="t('totalArticlesCreated')">Total articles created</div>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
+                <div class="text-xs theme-muted print-muted" x-text="t('participants')">Participants</div>
+                <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="wir.anim.totalParticipants"></div>
+                <div class="mt-2 text-xs theme-muted print-muted" x-text="t('sumParticipantsPerYear')">Sum (counted per year)</div>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
+                <div class="text-xs theme-muted print-muted" x-text="t('peakArticles')">Peak articles</div>
+                <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="wir.anim.peakArticles"></div>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('bestYear')">Best year</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="wir.metrics.peakArticles.year"></span>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card">
+                <div class="text-xs theme-muted print-muted" x-text="t('peakParticipants')">Peak participants</div>
+                <div class="mt-2 text-3xl font-extrabold print-text theme-title" x-text="wir.anim.peakParticipants"></div>
+                <div class="mt-2 text-xs theme-muted print-muted">
+                  <span x-text="t('bestYear')">Best year</span>:
+                  <span class="font-semibold print-text theme-strong" x-text="wir.metrics.peakParticipants.year"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Year table -->
+            <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5 glass print-card theme-card overflow-x-auto">
+              <div class="text-sm font-semibold print-text theme-strong" x-text="t('yearByYear')">Year-by-year</div>
+
+              <table class="mt-4 w-full text-sm">
+                <thead class="text-xs theme-muted print-muted">
+                  <tr class="border-b border-white/10">
+                    <th class="py-2 text-left rtl:text-right" x-text="t('years')">Years</th>
+                    <th class="py-2 text-left rtl:text-right" x-text="t('participants')">Participants</th>
+                    <th class="py-2 text-left rtl:text-right" x-text="t('articles')">Articles</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="y in wir.series" :key="y.year">
+                    <tr class="border-b border-white/5">
+                      <td class="py-2 font-semibold print-text theme-strong" x-text="y.year"></td>
+                      <td class="py-2 print-text" x-text="fmtInt(y.participants || 0)"></td>
+                      <td class="py-2 print-text" x-text="fmtInt(y.articles || 0)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
             </div>
           </section>
 
